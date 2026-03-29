@@ -1,21 +1,14 @@
 'use client';
 
-import { ButtonHTMLAttributes, forwardRef } from 'react';
-import { motion } from 'framer-motion';
+import { forwardRef } from 'react';
+import { motion, HTMLMotionProps } from 'framer-motion';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+// Use HTMLMotionProps to ensure compatibility with motion.button
+interface ButtonProps extends HTMLMotionProps<"button"> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
-  children: React.ReactNode;
 }
-
-// UI/UX Pro Max compliance:
-// - touch-target-size: minimum 44px height
-// - cursor-pointer: proper cursor indication
-// - loading-buttons: disabled state during async operations
-// - focus-states: visible focus ring
-// - scale-feedback: subtle press animation
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
