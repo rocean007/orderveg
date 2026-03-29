@@ -8,7 +8,7 @@ import type { APIResponse } from '@/types';
 // PATCH - Update cart item quantity
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = extractToken(request.headers.get('authorization'));
@@ -27,7 +27,7 @@ export async function PATCH(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { quantity } = body;
 
@@ -87,7 +87,7 @@ export async function PATCH(
 // DELETE - Remove cart item
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = extractToken(request.headers.get('authorization'));
@@ -106,7 +106,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Verify ownership and delete
     const result = await db
