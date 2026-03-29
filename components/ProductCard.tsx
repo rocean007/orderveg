@@ -13,10 +13,10 @@ export default function ProductCard({ vegetable }: { vegetable: VegetableWithDet
   const { setAuthModalOpen } = useUIStore();
 
   const finalPrice = vegetable.finalPrice || vegetable.price;
-  const hasDiscount = vegetable.discount && vegetable.discount > 0;
+  const hasDiscount = !!(vegetable.discount && vegetable.discount > 0);
 
   const handleAddToCart = () => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       setAuthModalOpen(true, 'login');
       toast.error('Please sign in to add items to cart');
       return;
@@ -80,7 +80,7 @@ export default function ProductCard({ vegetable }: { vegetable: VegetableWithDet
           {vegetable.name}
         </h3>
         {vegetable.description && (
-          <p className="text-sm text-slate-600 dark:text-slate-400 truncate-2">
+          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
             {vegetable.description}
           </p>
         )}
@@ -102,7 +102,7 @@ export default function ProductCard({ vegetable }: { vegetable: VegetableWithDet
               ${vegetable.price}
             </span>
           )}
-          <span className="text-sm text-slate-500 dark:text-slate-400">
+          <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">
             /{vegetable.unit}
           </span>
         </div>
