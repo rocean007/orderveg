@@ -12,7 +12,7 @@ interface AuthState {
 
 interface CartState {
   items: CartItemWithDetails[];
-  addItem: (item: Omit<CartItemWithDetails, 'id' | 'subtotal'> & { quantity: number }) => void;
+  addItem: (newItem: Omit<CartItemWithDetails, 'id' | 'subtotal' | 'quantity'> & { quantity: number }) => void;
   removeItem: (vegetableId: number) => void;
   updateQuantity: (vegetableId: number, quantity: number) => void;
   clearCart: () => void;
@@ -30,8 +30,6 @@ interface UIState {
   setAuthModalOpen: (open: boolean, mode?: 'login' | 'register') => void;
 }
 
-// Auth store with persistence
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -43,8 +41,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      // Ensure after rehydration, isAuthenticated is correct
+      storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : null) as any),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.isAuthenticated = !!state.token && !!state.user;
@@ -54,7 +51,6 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Cart store with persistence (for non-logged in users)
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -65,16 +61,15 @@ export const useCartStore = create<CartState>()(
         const existingItem = items.find((item) => item.vegetableId === newItem.vegetableId);
         
         if (existingItem) {
-          // Update quantity if item exists
           set({
             items: items.map((item) =>
               item.vegetableId === newItem.vegetableId
                 ? {
                     ...item,
-                    quantity: (parseFloat(item.quantity) + newItem.quantity).toString(),
+                    quantity: (parseFloat(item.quantity || "0") + newItem.quantity).toString(),
                     subtotal: (
-                      (parseFloat(item.quantity) + newItem.quantity) *
-                      parseFloat(item.price) *
+                      (parseFloat(item.quantity || "0") + newItem.quantity) *
+                      parseFloat(item.price?.toString() || "0") *
                       (1 - (item.discount || 0) / 100)
                     ).toFixed(2),
                   }
@@ -82,10 +77,10 @@ export const useCartStore = create<CartState>()(
             ),
           });
         } else {
-          // Add new item
+          const price = parseFloat(newItem.price?.toString() || "0");
           const subtotal = (
             newItem.quantity *
-            parseFloat(newItem.price) *
+            price *
             (1 - (newItem.discount || 0) / 100)
           ).toFixed(2);
           
@@ -94,10 +89,10 @@ export const useCartStore = create<CartState>()(
               ...items,
               {
                 ...newItem,
-                id: Date.now(), // Temporary ID for local cart
-                quantity: newItem.quantity.toString(),
+                id: Date.now(),
+                quantity: newItem.quantity.toString(), // Now valid because quantity is a number
                 subtotal,
-              },
+              } as CartItemWithDetails,
             ],
           });
         }
@@ -123,7 +118,7 @@ export const useCartStore = create<CartState>()(
                   quantity: quantity.toString(),
                   subtotal: (
                     quantity *
-                    parseFloat(item.price) *
+                    parseFloat(item.price?.toString() || "0") *
                     (1 - (item.discount || 0) / 100)
                   ).toFixed(2),
                 }
@@ -135,31 +130,26 @@ export const useCartStore = create<CartState>()(
       clearCart: () => set({ items: [] }),
       
       getTotal: () => {
-        return get().items.reduce((total, item) => total + parseFloat(item.subtotal), 0);
+        return get().items.reduce((total, item) => total + parseFloat(item.subtotal || "0"), 0);
       },
       
       getItemCount: () => {
-        return get().items.reduce((count, item) => count + parseFloat(item.quantity), 0);
+        return get().items.reduce((count, item) => count + parseFloat(item.quantity || "0"), 0);
       },
     }),
     {
       name: 'cart-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : null) as any),
     }
   )
 );
 
-// UI state store (not persisted)
 export const useUIStore = create<UIState>((set) => ({
   isMobileMenuOpen: false,
   isCartOpen: false,
   isAuthModalOpen: false,
   authModalMode: 'login',
-  
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
-  
   setCartOpen: (open) => set({ isCartOpen: open }),
-  
-  setAuthModalOpen: (open, mode = 'login') => 
-    set({ isAuthModalOpen: open, authModalMode: mode }),
+  setAuthModalOpen: (open, mode = 'login') => set({ isAuthModalOpen: open, authModalMode: mode }),
 }));
