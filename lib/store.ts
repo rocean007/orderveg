@@ -5,9 +5,9 @@ import type { CartItemWithDetails, UserProfile } from '@/types';
 interface AuthState {
   token: string | null;
   user: UserProfile | null;
+  isAuthenticated: boolean;
   setAuth: (token: string, user: UserProfile) => void;
   clearAuth: () => void;
-  isAuthenticated: () => boolean;
 }
 
 interface CartState {
@@ -31,18 +31,25 @@ interface UIState {
 }
 
 // Auth store with persistence
+
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       token: null,
       user: null,
-      setAuth: (token, user) => set({ token, user }),
-      clearAuth: () => set({ token: null, user: null }),
-      isAuthenticated: () => !!get().token && !!get().user,
+      isAuthenticated: false,
+      setAuth: (token, user) => set({ token, user, isAuthenticated: true }),
+      clearAuth: () => set({ token: null, user: null, isAuthenticated: false }),
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
+      // Ensure after rehydration, isAuthenticated is correct
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isAuthenticated = !!state.token && !!state.user;
+        }
+      },
     }
   )
 );
