@@ -32,7 +32,7 @@ export default function ProductCard({ vegetable }: { vegetable: VegetableWithDet
       organic: vegetable.organic,
       discount: vegetable.discount,
       quantity: 1,
-    });
+    } as any);
 
     toast.success(`${vegetable.name} added to cart`);
   };
